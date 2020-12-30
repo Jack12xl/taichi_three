@@ -53,3 +53,17 @@ class SimpleParticles:
         for i in range(self.npars[None]):
             for k in ti.static(range(3)):
                 self.colors[i][k] = colors[i, k]
+
+    @ti.kernel
+    def set_particle_colors_hex(self, colors: ti.ext_arr()):
+        for i in range(self.npars[None]):
+            # for k in ti.static(range(3)):
+            self.colors[i] = self.int2RGB(colors[i])
+
+    @ti.func
+    def int2RGB(self, hex):
+        b = hex % 256
+        g = int(((hex - b) / 256) % 256)  # always an integer
+        r = int(((hex - b) / 256 ** 2) - g / 256)  # ditto
+        ret = ti.Vector([r, g, b]) / 255
+        return ret
