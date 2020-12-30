@@ -1,6 +1,10 @@
 from .common import *
 
 
+inf = 1e6
+eps = 1e-6
+
+
 def texture_as_field(filename):
     if isinstance(filename, str):
         img_np = np.float32(ti.imread(filename) / 255)
@@ -44,7 +48,7 @@ def spherical(h, p):
 @ti.func
 def unspherical(dir):
     p = ti.atan2(dir.y, dir.x) / ti.tau
-    return dir.z, p
+    return dir.z, p % 1
 
 
 @ti.func
