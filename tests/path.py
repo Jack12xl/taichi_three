@@ -1,28 +1,33 @@
 import taichi as ti
 import numpy as np
 import taichi_inject
-import tina.path
+import tina
 
-ti.init(ti.gpu)
+ti.init(ti.cpu)
 
-verts, faces = tina.readobj('assets/monkey.obj', simple=True)
-verts = verts[faces]
+scene = tina.PTScene(smoothing=True, texturing=True)
 
-matr = tina.path.Material()
-#geom = tina.path.Particles(matr, np.load('assets/fluid.npy') * 2 - 1, 0.02)
-#geom = tina.path.Particles(matr, np.array([[0, 0, 0], [.5, 0, 0]]), 0.2)
-geom = tina.path.Triangles(matr, verts)
-tree = tina.path.BVHTree(geom=geom)
-engine = tina.path.PathEngine(tree)
+mesh = tina.MeshTransform(tina.MeshModel('assets/monkey.obj'), tina.translate([0, -0.5, 0]))
+material = tina.Lambert()
 
-geom.build(tree)
+mesh2 = tina.MeshTransform(tina.MeshModel('assets/sphere.obj'), tina.translate([0, +0.5, 0]))
+material2 = tina.Lambert(color=tina.Texture('assets/uv.png'))
+
+scene.add_object(mesh, material)
+scene.add_object(mesh2, material2)
+scene.build()
+
+scene.lighting.set_lights(np.array([
+    [0, 1.38457, -1.44325],
+], dtype=np.float32))
+scene.lighting.set_light_radii(np.array([
+    0.2,
+], dtype=np.float32))
 
 
-gui = ti.GUI('BVH', engine.res)
+gui = ti.GUI('BVH', scene.res)
 while gui.running and not gui.get_event(gui.ESCAPE, gui.SPACE):
-    engine.load_rays()
-    for step in range(2):
-        engine.step_rays()
-    engine.update_image()
-    gui.set_image(engine.get_image())
+    scene.render(nsteps=3)
+    print(gui.frame + 1, 'samples')
+    gui.set_image(scene.img)
     gui.show()

@@ -1,8 +1,7 @@
-print('[Tina] Loading path tracer...')
-
-from .engine import *
-from .material import *
-from .geom import *
-from .pars import *
-from .mesh import *
-from .tree import *
+if __import__('lazyimp').mock(globals()):
+    from .engine import *
+    from .lighting import *
+    from .geometry import *
+    from .particles import *
+    from .triangle import *
+    from .tree import *

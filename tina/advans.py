@@ -25,6 +25,24 @@ def aces_tonemap(color):
     return color * (2.51 * color + 0.03) / (color * (2.43 * color + 0.59) + 0.14)
 
 
+@ti.pyfunc
+def _film(x):
+    # https://zhuanlan.zhihu.com/p/21983679
+    A = 0.22
+    B = 0.30
+    C = 0.10
+    D = 0.20
+    E = 0.01
+    F = 0.30
+
+    return (x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F) - E / F
+
+
+@ti.pyfunc
+def film_tonemap(color):
+    return _film(1.6 * color) / _film(11.2)
+
+
 @ti.func
 def ce_tonemap(color):
     return 1 - ti.exp(-color)
@@ -32,7 +50,14 @@ def ce_tonemap(color):
 
 @ti.func
 def tangentspace(nrm):
-    up = V(0., 1., 0.)
+    #up = V(0., 1., 0.)
+    up = V(233., 666., 512.).normalized()
+    '''
+    if abs(nrm.y) > 0.9:
+        up = V(0., 0., 1.)
+        if abs(nrm.z) > 0.9:
+            up = V(1., 0., 0.)
+    '''
     bitan = nrm.cross(up).normalized()
     tan = bitan.cross(nrm)
     return ti.Matrix.cols([tan, bitan, nrm])

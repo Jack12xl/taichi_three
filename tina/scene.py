@@ -71,16 +71,19 @@ class Scene:
 
         self.objects[object] = namespace(material=material, raster=raster)
 
-    def init_control(self, gui, center=None, theta=None, phi=None, radius=None):
+    def init_control(self, gui, center=None, theta=None, phi=None, radius=None,
+                     fov=60, blendish=False):
         '''
         :param gui: (GUI) the GUI to bind with
         :param center: (3 * [float]) the target (lookat) position
         :param theta: (float) the altitude of camera
         :param phi: (float) the longitude of camera
         :param radius: (float) the distance from camera to target
+        :param blendish: (bool) whether to use blender key bindings
+        :param fov: (bool) the initial field of view of the camera
         '''
 
-        self.control = tina.Control(gui)
+        self.control = tina.Control(gui, fov, blendish)
         if center is not None:
             self.control.center[:] = center
         if theta is not None:
@@ -129,7 +132,7 @@ class Scene:
         if not hasattr(self, 'control'):
             self.control = tina.Control(gui)
         changed = self.control.get_camera(self.engine)
-        if changed and self.taa:
+        if hasattr(self, 'accum') and changed:
             self.accum.clear()
         return changed
 
@@ -142,3 +145,49 @@ class Scene:
 
         from .assimp.gltf import readgltf
         return readgltf(path).extract(self)
+
+
+# noinspection PyMissingConstructor
+class PTScene(Scene):
+    def __init__(self, res=512, **options):
+        self.tracer = tina.TriangleTracer(**options)
+        self.mtltab = tina.MaterialTable()
+        self.lighting = tina.PointLighting()
+        self.tree = tina.BVHTree(self.tracer)
+        self.engine = tina.PathEngine(self.tree, self.lighting, self.mtltab, res=res)
+        self.res = self.engine.res
+        self.options = options
+
+        self.default_material = tina.Lambert()
+        self.materials = []
+        self.objects = []
+
+    def add_object(self, object, material=None, tracer=None):
+        if material is None:
+            material = self.default_material
+        # TODO: multiple tracer
+
+        if material not in self.materials:
+            self.materials.append(material)
+        mtlid = self.materials.index(material)
+        self.objects.append((object, mtlid))
+
+    def update(self):
+        self.engine.clear_image()
+        self.mtltab.clear_materials()
+        self.tracer.clear_objects()
+        for material in self.materials:
+            self.mtltab.add_material(material)
+        for object, mtlid in self.objects:
+            self.tracer.add_object(object, mtlid)
+        self.tracer.build(self.tree)
+
+    def render(self, nsteps=4):
+        self.engine.load_rays()
+        for step in range(nsteps):
+            self.engine.step_rays()
+        self.engine.update_image()
+
+    @property
+    def img(self):
+        return self.engine.get_image()
