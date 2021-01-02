@@ -4,7 +4,7 @@ import taichi_inject
 import ezprof
 import tina
 
-ti.init(ti.cpu)
+ti.init(ti.gpu)
 
 scene = tina.PTScene(texturing=True)
 
