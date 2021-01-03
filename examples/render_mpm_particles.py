@@ -6,28 +6,29 @@ import os
 
 ti.init(ti.gpu)
 
-scene = tina.Scene()
+n_particle = 1024 * 512
 
-n_particle = 1024 * 128
+scene = tina.Scene(maxpars=n_particle)
 pars = tina.SimpleParticles(n_particle)
 material = tina.BlinnPhong()
 scene.add_object(pars, material)
 
 gui = ti.GUI('MPM_particles')
 
-root_dir = "E:\Jack12\\a-toy-fluid-engine\\tmp_result\\12-30-13-06-57-MPM3D-P-131072-G-256x256x256-dt-0.004"
-out_dir = os.path.join(root_dir, "rendered"+str(n_particle))
+root_dir = "E:\Jack12\\a-toy-fluid-engine\\tmp_result\\01-01-02-15-23-pee-MPM3D-P-294912-G-128x128x128-dt-0.004"
+out_dir = os.path.join(root_dir, "rendered" + str(n_particle))
 os.makedirs(out_dir, exist_ok=True)
 bool_out = True
 
-p_info_dir = sorted(glob( os.path.join(root_dir, "particle", "*.npz")))
+p_info_dir = sorted(glob(os.path.join(root_dir, "particle", "*.npz")))
 
 frame_len = len(p_info_dir)
 print(f"We will render {frame_len} images !")
 
 scene.init_control(gui,
                    center=np.array([0.5, 0.0, 0.5]),
-                   theta=np.pi / 2 - np.radians(30),
+                   theta=np.pi / 2 - np.radians(40),
+                   phi=np.pi / 2 - np.radians(40),
                    radius=1.5)
 
 cur_frame = 0
